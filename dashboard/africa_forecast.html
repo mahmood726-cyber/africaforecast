@@ -1,0 +1,2804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AfricaForecast Dashboard</title>
+<style>
+/* ===== CSS Reset + Variables ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary: #0f1117;
+  --bg-secondary: #1a1d27;
+  --bg-tertiary: #242836;
+  --text-primary: #e8eaed;
+  --text-secondary: #9aa0a6;
+  --text-muted: #6b7280;
+  --accent: #4da6ff;
+  --accent-hover: #7bbfff;
+  --border: #353945;
+  --green: #34d399;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --orange: #fb923c;
+  --purple: #a78bfa;
+  --cyan: #22d3ee;
+  --pink: #f472b6;
+  --chart-line: #4da6ff;
+  --chart-ci: rgba(77,166,255,0.15);
+  --chart-hist: #9aa0a6;
+  --chart-grid: #2a2e3a;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+html { font-size: 14px; }
+body {
+  font-family: var(--font);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* ===== Layout ===== */
+#app-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+#app-header h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+#file-loader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+#file-loader label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+#file-input {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+}
+
+#load-status {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Tab navigation */
+#tab-bar {
+  display: flex;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  gap: 0;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-secondary);
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.tab-btn:hover, .tab-btn:focus {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  outline: none;
+}
+
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.tab-btn:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* Views */
+.view {
+  display: none;
+  padding: 20px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.view.active { display: block; }
+
+/* Common panel/card */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.card h2, .card h3 {
+  font-size: 1rem;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+
+/* Controls row */
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.controls-row label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+select, input[type="range"] {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  font-family: var(--font);
+}
+
+select:focus, input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-family: var(--font);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+button:hover, button:focus {
+  background: var(--accent-hover);
+  outline: none;
+}
+
+button:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* Summary stats bar */
+.stat-bar {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: var(--mono);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Cartogram grid */
+#cartogram-container {
+  overflow: auto;
+}
+
+#cartogram-container svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.carto-cell {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.carto-cell:hover {
+  opacity: 0.8;
+}
+
+.carto-cell:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.carto-label {
+  font-size: 9px;
+  fill: #fff;
+  pointer-events: none;
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-weight: 700;
+}
+
+/* Legend bar */
+.legend-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.legend-gradient {
+  height: 12px;
+  width: 200px;
+  border-radius: 4px;
+}
+
+.legend-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Canvas chart container */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+
+.chart-wrap canvas {
+  display: block;
+  width: 100%;
+}
+
+/* Sparkline grid */
+.sparkline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.sparkline-card {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+
+.sparkline-card .spark-title {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.sparkline-card .spark-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--mono);
+}
+
+/* SDG traffic lights */
+.sdg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.sdg-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+}
+
+.sdg-light {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sdg-light.green { background: var(--green); }
+.sdg-light.amber { background: var(--amber); }
+.sdg-light.red { background: var(--red); }
+
+.sdg-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* DAG canvas */
+#dag-canvas-wrap {
+  width: 100%;
+  height: 500px;
+  position: relative;
+}
+
+#dag-canvas-wrap canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Tables */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.data-table th, .data-table td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table th {
+  color: var(--accent);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+}
+
+.data-table tbody tr:hover {
+  background: var(--bg-tertiary);
+}
+
+/* Two-column layout */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state h2 {
+  font-size: 1.3rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+/* Causal pathway mini list */
+.causal-path-list {
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.causal-path-list li {
+  padding: 4px 0;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.causal-path-list li:last-child { border-bottom: none; }
+
+.causal-arrow { color: var(--accent); font-weight: 700; }
+
+/* Back button */
+.back-btn {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+/* Slider display */
+.slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider-val {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  color: var(--accent);
+  min-width: 40px;
+}
+
+/* Scrollable table container */
+.table-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* No-data overlay */
+.no-data-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header id="app-header">
+  <h1>AfricaForecast 2026-2036</h1>
+  <div id="file-loader">
+    <label for="file-input">Load JSON bundle:</label>
+    <input type="file" id="file-input" accept=".json" aria-label="Load forecasts.json bundle">
+    <span id="load-status">No data loaded</span>
+  </div>
+</header>
+
+<!-- ===== Tab Bar ===== -->
+<nav id="tab-bar" role="tablist" aria-label="Dashboard views">
+  <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="view-overview" id="tab-overview" tabindex="0" data-view="view-overview">Overview</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="view-country" id="tab-country" tabindex="-1" data-view="view-country" disabled>Country Dive</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="view-counterfactual" id="tab-counterfactual" tabindex="-1" data-view="view-counterfactual" disabled>Counterfactual</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="view-explorer" id="tab-explorer" tabindex="-1" data-view="view-explorer" disabled>Explorer</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="view-transparency" id="tab-transparency" tabindex="-1" data-view="view-transparency" disabled>Transparency</button>
+</nav>
+
+<!-- ===== View 1: Continental Overview ===== -->
+<section class="view active" id="view-overview" role="tabpanel" aria-labelledby="tab-overview">
+  <div class="empty-state" id="overview-empty">
+    <h2>Welcome to AfricaForecast</h2>
+    <p>Load a <code>forecasts.json</code> bundle to begin exploring health projections for 54 African nations.</p>
+  </div>
+  <div id="overview-content" style="display:none;">
+    <div class="stat-bar" id="overview-stats"></div>
+    <div class="controls-row">
+      <label for="ov-indicator">Indicator:</label>
+      <select id="ov-indicator"></select>
+      <label for="ov-mode">Show:</label>
+      <select id="ov-mode">
+        <option value="current">Current (2021)</option>
+        <option value="forecast">Forecast (2036)</option>
+        <option value="change">Change (%)</option>
+      </select>
+    </div>
+    <div class="card" id="cartogram-container">
+      <svg id="cartogram-svg"></svg>
+      <div class="legend-bar" id="cartogram-legend"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== View 2: Country Deep Dive ===== -->
+<section class="view" id="view-country" role="tabpanel" aria-labelledby="tab-country">
+  <button class="back-btn" id="country-back" aria-label="Back to Overview">Back to Overview</button>
+  <h2 id="country-title" style="font-size:1.2rem; margin-bottom:12px; color:var(--accent);"></h2>
+  <div class="card">
+    <h3>SDG Target Traffic Lights (2036 forecast vs targets)</h3>
+    <div class="sdg-grid" id="country-sdg"></div>
+  </div>
+  <div class="card">
+    <h3>Indicator Sparklines (historical + forecast)</h3>
+    <div class="sparkline-grid" id="country-sparklines"></div>
+  </div>
+  <div class="card">
+    <h3>Causal Drivers</h3>
+    <ul class="causal-path-list" id="country-causal"></ul>
+  </div>
+</section>
+
+<!-- ===== View 3: Counterfactual Sandbox ===== -->
+<section class="view" id="view-counterfactual" role="tabpanel" aria-labelledby="tab-counterfactual">
+  <div class="card">
+    <h2>Counterfactual Sandbox</h2>
+    <p style="color:var(--text-secondary); margin-bottom:12px; font-size:0.85rem;">
+      Explore "what if" scenarios: select a country and intervention, then see how health outcomes change.
+    </p>
+    <div class="controls-row">
+      <label for="cf-country">Country:</label>
+      <select id="cf-country"></select>
+      <label for="cf-variable">Intervention:</label>
+      <select id="cf-variable"></select>
+      <label for="cf-magnitude">Magnitude:</label>
+      <select id="cf-magnitude"></select>
+      <button id="cf-run">Run Scenario</button>
+      <button id="cf-export" style="background:var(--bg-tertiary); color:var(--text-primary);">Export CSV</button>
+    </div>
+  </div>
+  <div id="cf-results" style="display:none;">
+    <div class="card">
+      <h3>Affected Indicators</h3>
+      <div id="cf-affected" style="color:var(--text-secondary); font-size:0.85rem;"></div>
+    </div>
+    <div id="cf-charts"></div>
+  </div>
+</section>
+
+<!-- ===== View 4: Indicator Explorer ===== -->
+<section class="view" id="view-explorer" role="tabpanel" aria-labelledby="tab-explorer">
+  <div class="card">
+    <h2>Indicator Explorer</h2>
+    <div class="controls-row">
+      <label for="ex-indicator">Indicator:</label>
+      <select id="ex-indicator"></select>
+      <label for="ex-year">Year:</label>
+      <select id="ex-year"></select>
+      <label for="ex-region">Region:</label>
+      <select id="ex-region">
+        <option value="all">All Africa</option>
+      </select>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <h3>Country Ranking</h3>
+      <div class="chart-wrap" id="ex-bar-wrap">
+        <canvas id="ex-bar-canvas" height="500"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Scatter: <span id="ex-scatter-title"></span></h3>
+      <div class="controls-row">
+        <label for="ex-scatter-x">X-axis:</label>
+        <select id="ex-scatter-x"></select>
+        <label for="ex-scatter-y">Y-axis:</label>
+        <select id="ex-scatter-y"></select>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="ex-scatter-canvas" height="400"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Time Series Overlay</h3>
+    <div class="controls-row">
+      <label>Countries (click bars above to add):</label>
+      <span id="ex-ts-selected" style="color:var(--accent); font-size:0.85rem;">None selected</span>
+      <button id="ex-ts-clear" style="background:var(--bg-tertiary); color:var(--text-primary); font-size:0.8rem;">Clear</button>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="ex-ts-canvas" height="300"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ===== View 5: Model Transparency ===== -->
+<section class="view" id="view-transparency" role="tabpanel" aria-labelledby="tab-transparency">
+  <div class="card">
+    <h2>Model Transparency</h2>
+    <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:12px;">
+      Inspect the causal DAG, ensemble weights, and validation metrics that underpin every forecast.
+    </p>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <h3>Causal DAG</h3>
+      <div class="controls-row">
+        <label for="dag-filter">Filter node:</label>
+        <select id="dag-filter"><option value="">All nodes</option></select>
+      </div>
+      <div id="dag-canvas-wrap">
+        <canvas id="dag-canvas"></canvas>
+      </div>
+      <div style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;">
+        Solid = domain knowledge | Dashed = data-driven | Drag to rearrange
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h3>Ensemble Weights</h3>
+        <div class="table-scroll" id="weights-table-wrap"></div>
+      </div>
+      <div class="card">
+        <h3>Validation Metrics</h3>
+        <div class="table-scroll" id="validation-table-wrap"></div>
+      </div>
+      <div class="card">
+        <h3>Data Provenance</h3>
+        <div id="provenance-info" style="font-size:0.85rem; color:var(--text-secondary);"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+// =====================================================================
+// AfricaForecast Dashboard — Single-file interactive visualisation
+// =====================================================================
+// localStorage prefix: af_
+// No external dependencies
+
+'use strict';
+
+// ===== Global state =====
+let DATA = null;          // Loaded JSON bundle
+let COUNTRIES_MAP = {};   // iso3 -> name
+let INDICATOR_LIST = [];  // [{id, name, domain}, ...]
+let SELECTED_COUNTRY = null;
+let TS_SELECTED = [];     // Countries selected for time series overlay
+
+// ===== Colour palettes =====
+const REGION_COLORS = {
+  North: '#4da6ff',
+  West: '#34d399',
+  Central: '#fbbf24',
+  East: '#f87171',
+  Southern: '#a78bfa'
+};
+
+const SERIES_COLORS = [
+  '#4da6ff','#34d399','#fbbf24','#f87171','#a78bfa',
+  '#fb923c','#22d3ee','#f472b6','#84cc16','#e879f9',
+  '#38bdf8','#facc15','#fb7185','#2dd4bf','#c084fc'
+];
+
+// ===== Country name map (full) =====
+const COUNTRY_NAMES = {
+  DZA:'Algeria',EGY:'Egypt',LBY:'Libya',MRT:'Mauritania',MAR:'Morocco',
+  TUN:'Tunisia',SDN:'Sudan',BEN:'Benin',BFA:'Burkina Faso',CPV:'Cabo Verde',
+  CIV:"Cote d'Ivoire",GMB:'Gambia',GHA:'Ghana',GIN:'Guinea',GNB:'Guinea-Bissau',
+  LBR:'Liberia',MLI:'Mali',NER:'Niger',NGA:'Nigeria',SEN:'Senegal',
+  SLE:'Sierra Leone',TGO:'Togo',CMR:'Cameroon',CAF:'Central African Rep.',
+  TCD:'Chad',COG:'Congo',COD:'DR Congo',GNQ:'Eq. Guinea',GAB:'Gabon',
+  STP:'Sao Tome & Pr.',BDI:'Burundi',COM:'Comoros',DJI:'Djibouti',
+  ERI:'Eritrea',ETH:'Ethiopia',KEN:'Kenya',MDG:'Madagascar',MWI:'Malawi',
+  MUS:'Mauritius',MOZ:'Mozambique',RWA:'Rwanda',SYC:'Seychelles',
+  SOM:'Somalia',SSD:'South Sudan',TZA:'Tanzania',UGA:'Uganda',
+  AGO:'Angola',BWA:'Botswana',SWZ:'Eswatini',LSO:'Lesotho',
+  NAM:'Namibia',ZAF:'South Africa',ZMB:'Zambia',ZWE:'Zimbabwe'
+};
+
+// ===== Cartogram positions (col, row) for Africa hex-map =====
+// Approximate geographic layout: 11 cols x 11 rows
+const CARTOGRAM_POS = {
+  // North (row 0-1)
+  MAR:[0,0],DZA:[1,0],TUN:[2,0],LBY:[3,0],EGY:[4,0],
+  MRT:[0,1],MLI:[1,1],NER:[2,1],TCD:[3,1],SDN:[4,1],ERI:[5,1],DJI:[6,1],
+  // West (rows 2-3)
+  SEN:[0,2],GMB:[0,3],GNB:[0,4],GIN:[1,3],SLE:[1,4],LBR:[1,5],
+  CPV:[-1,2],
+  BFA:[2,2],CIV:[2,3],GHA:[3,3],TGO:[4,3],BEN:[4,2],NGA:[3,2],
+  // Central (rows 3-5)
+  CMR:[5,2],GNQ:[5,3],GAB:[5,4],COG:[6,4],STP:[4,4],
+  CAF:[6,2],COD:[6,3],SSD:[7,2],
+  // East (rows 2-6)
+  ETH:[7,1],SOM:[8,1],KEN:[8,2],UGA:[7,3],RWA:[7,4],BDI:[7,5],
+  TZA:[8,3],COM:[9,3],SYC:[10,3],
+  MDG:[9,5],MWI:[8,5],MOZ:[8,6],
+  // Southern (rows 6-8)
+  AGO:[5,5],ZMB:[7,6],ZWE:[8,7],
+  NAM:[6,7],BWA:[7,7],LSO:[8,8],SWZ:[9,7],
+  ZAF:[7,8],MUS:[10,5]
+};
+
+// ===== Seeded PRNG (xoshiro128**) =====
+function xoshiro128ss(seed) {
+  let s = [seed, seed ^ 0xDEADBEEF, seed ^ 0x12345678, seed ^ 0xABCDEF01];
+  function rotl(x, k) { return ((x << k) | (x >>> (32 - k))) >>> 0; }
+  function next() {
+    const result = (rotl((s[1] * 5) >>> 0, 7) * 9) >>> 0;
+    const t = (s[1] << 9) >>> 0;
+    s[2] ^= s[0]; s[3] ^= s[1]; s[1] ^= s[2]; s[0] ^= s[3];
+    s[2] ^= t; s[3] = rotl(s[3], 11);
+    return result / 4294967296;
+  }
+  // Warm up
+  for (let i = 0; i < 20; i++) next();
+  return next;
+}
+const seededRandom = xoshiro128ss(42);
+
+
+// =====================================================================
+// Utility functions
+// =====================================================================
+
+function fmt(v, decimals) {
+  if (v == null || v !== v) return '--';
+  decimals = decimals !== undefined ? decimals : 1;
+  if (Math.abs(v) >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+  if (Math.abs(v) >= 1e3) return (v / 1e3).toFixed(1) + 'K';
+  return v.toFixed(decimals);
+}
+
+function pctChange(oldVal, newVal) {
+  if (oldVal == null || newVal == null || oldVal === 0) return null;
+  return ((newVal - oldVal) / Math.abs(oldVal)) * 100;
+}
+
+function getCountryName(iso3) {
+  if (DATA && DATA.meta && DATA.meta.countries) {
+    // Check indicator_names won't have country names, use our map
+  }
+  return COUNTRY_NAMES[iso3] || iso3;
+}
+
+function getIndicatorName(id) {
+  if (DATA && DATA.meta && DATA.meta.indicator_names && DATA.meta.indicator_names[id]) {
+    return DATA.meta.indicator_names[id];
+  }
+  return id;
+}
+
+function getHistoricalValue(iso3, indicator, year) {
+  if (!DATA || !DATA.historical) return null;
+  for (let i = 0; i < DATA.historical.length; i++) {
+    const r = DATA.historical[i];
+    if (r.iso3 === iso3 && r.year === year && r[indicator] != null) {
+      return r[indicator];
+    }
+  }
+  return null;
+}
+
+function getForecastValue(iso3, indicator, year) {
+  if (!DATA || !DATA.forecasts) return null;
+  const meanKey = indicator + '_mean';
+  for (let i = 0; i < DATA.forecasts.length; i++) {
+    const r = DATA.forecasts[i];
+    if (r.iso3 === iso3 && r.year === year && r[meanKey] != null) {
+      return r[meanKey];
+    }
+  }
+  return null;
+}
+
+function getForecastCI(iso3, indicator, year) {
+  if (!DATA || !DATA.forecasts) return [null, null];
+  const loKey = indicator + '_lo80';
+  const hiKey = indicator + '_hi80';
+  for (let i = 0; i < DATA.forecasts.length; i++) {
+    const r = DATA.forecasts[i];
+    if (r.iso3 === iso3 && r.year === year) {
+      return [r[loKey] != null ? r[loKey] : null, r[hiKey] != null ? r[hiKey] : null];
+    }
+  }
+  return [null, null];
+}
+
+function getHistoricalSeries(iso3, indicator) {
+  if (!DATA || !DATA.historical) return [];
+  const pts = [];
+  for (let i = 0; i < DATA.historical.length; i++) {
+    const r = DATA.historical[i];
+    if (r.iso3 === iso3 && r[indicator] != null) {
+      pts.push({ year: r.year, value: r[indicator] });
+    }
+  }
+  pts.sort((a, b) => a.year - b.year);
+  return pts;
+}
+
+function getForecastSeries(iso3, indicator) {
+  if (!DATA || !DATA.forecasts) return [];
+  const meanKey = indicator + '_mean';
+  const loKey = indicator + '_lo80';
+  const hiKey = indicator + '_hi80';
+  const pts = [];
+  for (let i = 0; i < DATA.forecasts.length; i++) {
+    const r = DATA.forecasts[i];
+    if (r.iso3 === iso3 && r[meanKey] != null) {
+      pts.push({
+        year: r.year,
+        value: r[meanKey],
+        lo: r[loKey] != null ? r[loKey] : null,
+        hi: r[hiKey] != null ? r[hiKey] : null
+      });
+    }
+  }
+  pts.sort((a, b) => a.year - b.year);
+  return pts;
+}
+
+function getLastHistYear() {
+  return DATA && DATA.meta ? DATA.meta.validate_end : 2021;
+}
+
+function getLastForecastYear() {
+  const valEnd = DATA && DATA.meta ? DATA.meta.validate_end : 2021;
+  const horizon = DATA && DATA.meta ? DATA.meta.forecast_horizon : 15;
+  return valEnd + horizon;
+}
+
+function getCountries() {
+  if (!DATA || !DATA.meta) return [];
+  return DATA.meta.countries || [];
+}
+
+function getIndicators() {
+  if (!DATA || !DATA.meta) return [];
+  return DATA.meta.indicators || [];
+}
+
+function getRegion(iso3) {
+  if (DATA && DATA.meta && DATA.meta.country_region) {
+    return DATA.meta.country_region[iso3] || 'Unknown';
+  }
+  return 'Unknown';
+}
+
+// Build a lookup index for faster access to historical/forecast data
+let HIST_INDEX = {};   // {iso3: {year: row}}
+let FORE_INDEX = {};   // {iso3: {year: row}}
+
+function buildIndices() {
+  HIST_INDEX = {};
+  FORE_INDEX = {};
+  if (DATA && DATA.historical) {
+    for (let i = 0; i < DATA.historical.length; i++) {
+      const r = DATA.historical[i];
+      if (!HIST_INDEX[r.iso3]) HIST_INDEX[r.iso3] = {};
+      HIST_INDEX[r.iso3][r.year] = r;
+    }
+  }
+  if (DATA && DATA.forecasts) {
+    for (let i = 0; i < DATA.forecasts.length; i++) {
+      const r = DATA.forecasts[i];
+      if (!FORE_INDEX[r.iso3]) FORE_INDEX[r.iso3] = {};
+      FORE_INDEX[r.iso3][r.year] = r;
+    }
+  }
+}
+
+function getHistFast(iso3, indicator, year) {
+  const c = HIST_INDEX[iso3];
+  if (!c) return null;
+  const r = c[year];
+  if (!r) return null;
+  return r[indicator] != null ? r[indicator] : null;
+}
+
+function getForeFast(iso3, indicator, year) {
+  const c = FORE_INDEX[iso3];
+  if (!c) return null;
+  const r = c[year];
+  if (!r) return null;
+  const k = indicator + '_mean';
+  return r[k] != null ? r[k] : null;
+}
+
+
+// =====================================================================
+// Canvas drawing utilities
+// =====================================================================
+
+function clearCanvas(canvas) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  return ctx;
+}
+
+function setupCanvas(canvas, w, h) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return ctx;
+}
+
+// Colour interpolation for choropleth
+function interpolateColor(t, low, high) {
+  // t in [0, 1]
+  t = Math.max(0, Math.min(1, t));
+  const r = Math.round(low[0] + (high[0] - low[0]) * t);
+  const g = Math.round(low[1] + (high[1] - low[1]) * t);
+  const b = Math.round(low[2] + (high[2] - low[2]) * t);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+
+// Blue-to-red diverging
+function divergingColor(t) {
+  // t in [0,1]: 0=blue, 0.5=white, 1=red
+  if (t <= 0.5) {
+    const s = t * 2;
+    return interpolateColor(s, [30, 80, 200], [220, 220, 230]);
+  } else {
+    const s = (t - 0.5) * 2;
+    return interpolateColor(s, [220, 220, 230], [200, 50, 50]);
+  }
+}
+
+// Sequential: dark blue to bright yellow
+function sequentialColor(t) {
+  t = Math.max(0, Math.min(1, t));
+  if (t < 0.33) {
+    return interpolateColor(t / 0.33, [20, 30, 80], [30, 100, 180]);
+  } else if (t < 0.66) {
+    return interpolateColor((t - 0.33) / 0.33, [30, 100, 180], [50, 200, 150]);
+  } else {
+    return interpolateColor((t - 0.66) / 0.34, [50, 200, 150], [250, 230, 50]);
+  }
+}
+
+// Draw a sparkline with optional CI shading
+function drawSparkline(canvas, histPts, forePts, opts) {
+  opts = opts || {};
+  const w = opts.width || 260;
+  const h = opts.height || 60;
+  const pad = { top: 4, right: 4, bottom: 4, left: 4 };
+
+  const ctx = setupCanvas(canvas, w, h);
+  ctx.clearRect(0, 0, w, h);
+
+  const allPts = histPts.concat(forePts);
+  if (allPts.length === 0) {
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '10px ' + getComputedStyle(document.body).fontFamily;
+    ctx.fillText('No data', w / 2 - 18, h / 2 + 3);
+    return;
+  }
+
+  const years = allPts.map(function(p) { return p.year; });
+  const vals = allPts.map(function(p) { return p.value; });
+  let allVals = vals.slice();
+  forePts.forEach(function(p) {
+    if (p.lo != null) allVals.push(p.lo);
+    if (p.hi != null) allVals.push(p.hi);
+  });
+
+  const xMin = Math.min.apply(null, years);
+  const xMax = Math.max.apply(null, years);
+  let yMin = Math.min.apply(null, allVals);
+  let yMax = Math.max.apply(null, allVals);
+  if (yMin === yMax) { yMin -= 1; yMax += 1; }
+
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+
+  function sx(year) { return pad.left + (year - xMin) / (xMax - xMin) * plotW; }
+  function sy(val) { return pad.top + plotH - (val - yMin) / (yMax - yMin) * plotH; }
+
+  // CI shading for forecast
+  if (forePts.length > 1) {
+    ctx.fillStyle = 'rgba(77,166,255,0.15)';
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i < forePts.length; i++) {
+      if (forePts[i].hi != null) {
+        const x = sx(forePts[i].year);
+        const y = sy(forePts[i].hi);
+        if (!started) { ctx.moveTo(x, y); started = true; }
+        else ctx.lineTo(x, y);
+      }
+    }
+    for (let i = forePts.length - 1; i >= 0; i--) {
+      if (forePts[i].lo != null) {
+        ctx.lineTo(sx(forePts[i].year), sy(forePts[i].lo));
+      }
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Historical line
+  if (histPts.length > 0) {
+    ctx.strokeStyle = '#9aa0a6';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(sx(histPts[0].year), sy(histPts[0].value));
+    for (let i = 1; i < histPts.length; i++) {
+      ctx.lineTo(sx(histPts[i].year), sy(histPts[i].value));
+    }
+    ctx.stroke();
+  }
+
+  // Forecast line
+  if (forePts.length > 0) {
+    ctx.strokeStyle = '#4da6ff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    // Connect to last historical point if available
+    if (histPts.length > 0) {
+      const lastHist = histPts[histPts.length - 1];
+      ctx.moveTo(sx(lastHist.year), sy(lastHist.value));
+      ctx.lineTo(sx(forePts[0].year), sy(forePts[0].value));
+    } else {
+      ctx.moveTo(sx(forePts[0].year), sy(forePts[0].value));
+    }
+    for (let i = 1; i < forePts.length; i++) {
+      ctx.lineTo(sx(forePts[i].year), sy(forePts[i].value));
+    }
+    ctx.stroke();
+  }
+
+  // SDG target line if provided
+  if (opts.sdgTarget != null && opts.sdgTarget >= yMin && opts.sdgTarget <= yMax) {
+    ctx.strokeStyle = '#f87171';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, sy(opts.sdgTarget));
+    ctx.lineTo(w - pad.right, sy(opts.sdgTarget));
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+
+// =====================================================================
+// Tab navigation
+// =====================================================================
+
+const tabBtns = document.querySelectorAll('.tab-btn');
+const views = document.querySelectorAll('.view');
+
+function switchView(viewId) {
+  views.forEach(function(v) { v.classList.remove('active'); });
+  tabBtns.forEach(function(b) {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+    b.setAttribute('tabindex', '-1');
+  });
+  const target = document.getElementById(viewId);
+  if (target) target.classList.add('active');
+  const btn = document.querySelector('[data-view="' + viewId + '"]');
+  if (btn) {
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    btn.setAttribute('tabindex', '0');
+    btn.focus();
+  }
+}
+
+tabBtns.forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    if (btn.disabled) return;
+    switchView(btn.getAttribute('data-view'));
+  });
+  btn.addEventListener('keydown', function(e) {
+    const tabs = Array.from(tabBtns).filter(function(b) { return !b.disabled; });
+    const idx = tabs.indexOf(btn);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = tabs[(idx + 1) % tabs.length];
+      next.focus();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = tabs[(idx - 1 + tabs.length) % tabs.length];
+      prev.focus();
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      btn.click();
+    }
+  });
+});
+
+
+// =====================================================================
+// File loading
+// =====================================================================
+
+document.getElementById('file-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('load-status');
+  status.textContent = 'Loading...';
+  status.style.color = 'var(--amber)';
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      DATA = JSON.parse(ev.target.result);
+      buildIndices();
+      status.textContent = 'Loaded: ' + file.name + ' (' + getCountries().length + ' countries, ' + getIndicators().length + ' indicators)';
+      status.style.color = 'var(--green)';
+      onDataLoaded();
+    } catch (err) {
+      status.textContent = 'Error: ' + err.message;
+      status.style.color = 'var(--red)';
+    }
+  };
+  reader.onerror = function() {
+    status.textContent = 'Error reading file';
+    status.style.color = 'var(--red)';
+  };
+  reader.readAsText(file);
+});
+
+
+// =====================================================================
+// Data loaded — initialize all views
+// =====================================================================
+
+function onDataLoaded() {
+  // Enable all tabs
+  tabBtns.forEach(function(b) { b.disabled = false; });
+
+  // Build indicator list with domain info
+  INDICATOR_LIST = [];
+  const domains = DATA.meta.pilot_domains || {};
+  const allInds = getIndicators();
+  allInds.forEach(function(id) {
+    let domain = 'covariate';
+    for (const d in domains) {
+      if (domains[d].indexOf(id) >= 0) { domain = d; break; }
+    }
+    INDICATOR_LIST.push({ id: id, name: getIndicatorName(id), domain: domain });
+  });
+
+  initOverview();
+  initCountryDive();
+  initCounterfactual();
+  initExplorer();
+  initTransparency();
+}
+
+
+// =====================================================================
+// VIEW 1: Continental Overview
+// =====================================================================
+
+function initOverview() {
+  document.getElementById('overview-empty').style.display = 'none';
+  document.getElementById('overview-content').style.display = 'block';
+
+  // Populate indicator dropdown
+  const sel = document.getElementById('ov-indicator');
+  sel.innerHTML = '';
+  INDICATOR_LIST.forEach(function(ind) {
+    const opt = document.createElement('option');
+    opt.value = ind.id;
+    opt.textContent = ind.name;
+    sel.appendChild(opt);
+  });
+
+  // Restore from localStorage
+  const saved = localStorage.getItem('af_ov_indicator');
+  if (saved && sel.querySelector('option[value="' + saved + '"]')) {
+    sel.value = saved;
+  }
+
+  sel.addEventListener('change', function() {
+    localStorage.setItem('af_ov_indicator', sel.value);
+    renderOverview();
+  });
+  document.getElementById('ov-mode').addEventListener('change', renderOverview);
+
+  renderOverviewStats();
+  renderOverview();
+}
+
+function renderOverviewStats() {
+  const bar = document.getElementById('overview-stats');
+  const countries = getCountries();
+  const nCountries = countries.length;
+  const nIndicators = getIndicators().length;
+  const valEnd = getLastHistYear();
+  const foreEnd = getLastForecastYear();
+  const regions = DATA.meta.regions ? Object.keys(DATA.meta.regions).length : 0;
+
+  bar.innerHTML = [
+    {v: nCountries, l: 'Countries'},
+    {v: nIndicators, l: 'Indicators'},
+    {v: regions, l: 'Regions'},
+    {v: valEnd + ' - ' + foreEnd, l: 'Forecast Period'},
+  ].map(function(s) {
+    return '<div class="stat-item"><div class="stat-value">' + s.v + '</div><div class="stat-label">' + s.l + '</div></div>';
+  }).join('');
+}
+
+function renderOverview() {
+  const indicator = document.getElementById('ov-indicator').value;
+  const mode = document.getElementById('ov-mode').value;
+  const countries = getCountries();
+  const valEnd = getLastHistYear();
+  const foreEnd = getLastForecastYear();
+
+  // Gather values per country
+  const values = {};
+  countries.forEach(function(iso3) {
+    let v = null;
+    if (mode === 'current') {
+      v = getHistFast(iso3, indicator, valEnd);
+    } else if (mode === 'forecast') {
+      v = getForeFast(iso3, indicator, foreEnd);
+    } else {
+      const curr = getHistFast(iso3, indicator, valEnd);
+      const fore = getForeFast(iso3, indicator, foreEnd);
+      v = pctChange(curr, fore);
+    }
+    values[iso3] = v;
+  });
+
+  // Compute min/max for colour scale
+  const nums = Object.values(values).filter(function(v) { return v != null; });
+  let vMin = nums.length > 0 ? Math.min.apply(null, nums) : 0;
+  let vMax = nums.length > 0 ? Math.max.apply(null, nums) : 1;
+  if (vMin === vMax) { vMin -= 1; vMax += 1; }
+
+  const isDiverging = mode === 'change';
+
+  // Draw cartogram
+  renderCartogram(values, vMin, vMax, isDiverging, indicator, mode);
+}
+
+function renderCartogram(values, vMin, vMax, isDiverging, indicator, mode) {
+  const svg = document.getElementById('cartogram-svg');
+  const cellW = 52;
+  const cellH = 40;
+  const gap = 3;
+  const padL = 60;
+  const padT = 20;
+
+  // Find bounds
+  let maxCol = 0, maxRow = 0;
+  for (const iso3 in CARTOGRAM_POS) {
+    const pos = CARTOGRAM_POS[iso3];
+    if (pos[0] > maxCol) maxCol = pos[0];
+    if (pos[1] > maxRow) maxRow = pos[1];
+  }
+  // Handle negative columns (CPV at -1)
+  let minCol = 0;
+  for (const iso3 in CARTOGRAM_POS) {
+    if (CARTOGRAM_POS[iso3][0] < minCol) minCol = CARTOGRAM_POS[iso3][0];
+  }
+  const colOffset = -minCol;
+
+  const svgW = (maxCol + colOffset + 1) * (cellW + gap) + padL + 20;
+  const svgH = (maxRow + 1) * (cellH + gap) + padT + 20;
+  svg.setAttribute('viewBox', '0 0 ' + svgW + ' ' + svgH);
+  svg.setAttribute('width', Math.min(svgW, 800));
+  svg.setAttribute('height', Math.min(svgH, 500));
+  svg.innerHTML = '';
+
+  const countries = getCountries();
+  const allIso3s = Object.keys(CARTOGRAM_POS);
+
+  allIso3s.forEach(function(iso3) {
+    const pos = CARTOGRAM_POS[iso3];
+    const col = pos[0] + colOffset;
+    const row = pos[1];
+    const x = padL + col * (cellW + gap);
+    const y = padT + row * (cellH + gap);
+
+    const v = values[iso3];
+    let fillColor;
+    if (v == null) {
+      fillColor = '#333';
+    } else if (isDiverging) {
+      // Centre on 0
+      const absMax = Math.max(Math.abs(vMin), Math.abs(vMax));
+      const t = absMax === 0 ? 0.5 : (v + absMax) / (2 * absMax);
+      fillColor = divergingColor(t);
+    } else {
+      const t = (v - vMin) / (vMax - vMin);
+      fillColor = sequentialColor(t);
+    }
+
+    const isInDataset = countries.indexOf(iso3) >= 0;
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'carto-cell');
+    g.setAttribute('tabindex', isInDataset ? '0' : '-1');
+    g.setAttribute('role', 'button');
+    g.setAttribute('aria-label', getCountryName(iso3) + ': ' + (v != null ? fmt(v) : 'no data'));
+
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', x);
+    rect.setAttribute('y', y);
+    rect.setAttribute('width', cellW);
+    rect.setAttribute('height', cellH);
+    rect.setAttribute('rx', '4');
+    rect.setAttribute('fill', fillColor);
+    rect.setAttribute('stroke', isInDataset ? '#555' : '#2a2a2a');
+    rect.setAttribute('stroke-width', '1');
+    if (!isInDataset) rect.setAttribute('opacity', '0.4');
+
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('class', 'carto-label');
+    label.setAttribute('x', x + cellW / 2);
+    label.setAttribute('y', y + cellH / 2 - 5);
+    label.textContent = iso3;
+
+    const valText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    valText.setAttribute('class', 'carto-label');
+    valText.setAttribute('x', x + cellW / 2);
+    valText.setAttribute('y', y + cellH / 2 + 8);
+    valText.setAttribute('font-size', '8');
+    valText.setAttribute('font-weight', '400');
+    valText.textContent = v != null ? fmt(v) : '--';
+
+    g.appendChild(rect);
+    g.appendChild(label);
+    g.appendChild(valText);
+
+    if (isInDataset) {
+      g.addEventListener('click', function() { navigateToCountry(iso3); });
+      g.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          navigateToCountry(iso3);
+        }
+      });
+    }
+
+    svg.appendChild(g);
+  });
+
+  // Legend
+  renderCartogramLegend(vMin, vMax, isDiverging, mode);
+}
+
+function renderCartogramLegend(vMin, vMax, isDiverging, mode) {
+  const container = document.getElementById('cartogram-legend');
+  const suffix = mode === 'change' ? '%' : '';
+  const leftLabel = isDiverging ? fmt(vMin) + suffix : fmt(vMin);
+  const rightLabel = isDiverging ? fmt(vMax) + suffix : fmt(vMax);
+
+  // Build gradient
+  const stops = [];
+  for (let i = 0; i <= 10; i++) {
+    const t = i / 10;
+    const col = isDiverging ? divergingColor(t) : sequentialColor(t);
+    stops.push(col + ' ' + (t * 100) + '%');
+  }
+
+  container.innerHTML =
+    '<span class="legend-label">' + leftLabel + '</span>' +
+    '<div class="legend-gradient" style="background:linear-gradient(to right,' + stops.join(',') + ')"></div>' +
+    '<span class="legend-label">' + rightLabel + '</span>';
+}
+
+function navigateToCountry(iso3) {
+  SELECTED_COUNTRY = iso3;
+  renderCountryDive();
+  switchView('view-country');
+}
+
+
+// =====================================================================
+// VIEW 2: Country Deep Dive
+// =====================================================================
+
+function initCountryDive() {
+  document.getElementById('country-back').addEventListener('click', function() {
+    switchView('view-overview');
+  });
+}
+
+function renderCountryDive() {
+  if (!SELECTED_COUNTRY || !DATA) return;
+  const iso3 = SELECTED_COUNTRY;
+  const name = getCountryName(iso3);
+  const region = getRegion(iso3);
+  document.getElementById('country-title').textContent = name + ' (' + iso3 + ') -- ' + region + ' Africa';
+
+  renderCountrySDG();
+  renderCountrySparklines();
+  renderCountryCausal();
+}
+
+function renderCountrySDG() {
+  const container = document.getElementById('country-sdg');
+  container.innerHTML = '';
+  const targets = DATA.meta.sdg_targets || {};
+  const iso3 = SELECTED_COUNTRY;
+  const foreEnd = getLastForecastYear();
+
+  // Determine direction from INDICATOR_LIST or just use target comparison
+  // For SDG: "lower_better" indicators should be BELOW target, "higher_better" should be ABOVE
+  const lowerBetter = ['u5_mort','neo_mort','mat_mort','hiv_inc','tb_inc','mal_inc','ncd_mort'];
+
+  for (const indId in targets) {
+    const target = targets[indId];
+    const forecast = getForeFast(iso3, indId, foreEnd);
+    const indName = getIndicatorName(indId);
+
+    let status = 'red';
+    let statusText = 'No data';
+    if (forecast != null) {
+      const isLB = lowerBetter.indexOf(indId) >= 0;
+      if (isLB) {
+        if (forecast <= target) status = 'green';
+        else if (forecast <= target * 1.5) status = 'amber';
+        else status = 'red';
+      } else {
+        if (forecast >= target) status = 'green';
+        else if (forecast >= target * 0.75) status = 'amber';
+        else status = 'red';
+      }
+      statusText = fmt(forecast) + ' (target: ' + fmt(target) + ')';
+    }
+
+    const div = document.createElement('div');
+    div.className = 'sdg-item';
+    div.innerHTML =
+      '<div class="sdg-light ' + status + '"></div>' +
+      '<div class="sdg-text"><strong>' + indName + '</strong><br>' + statusText + '</div>';
+    container.appendChild(div);
+  }
+}
+
+function renderCountrySparklines() {
+  const container = document.getElementById('country-sparklines');
+  container.innerHTML = '';
+  const iso3 = SELECTED_COUNTRY;
+  const foreEnd = getLastForecastYear();
+  const targets = DATA.meta.sdg_targets || {};
+
+  // Show all indicators in pilot domains
+  const domains = DATA.meta.pilot_domains || {};
+  const domainInds = [];
+  for (const d in domains) {
+    domains[d].forEach(function(id) { domainInds.push(id); });
+  }
+
+  // Use domain indicators, or fall back to all
+  const indsToShow = domainInds.length > 0 ? domainInds : getIndicators();
+
+  indsToShow.forEach(function(indId) {
+    const hist = getHistoricalSeries(iso3, indId);
+    const fore = getForecastSeries(iso3, indId);
+
+    if (hist.length === 0 && fore.length === 0) return;
+
+    const card = document.createElement('div');
+    card.className = 'sparkline-card';
+
+    const lastVal = fore.length > 0 ? fore[fore.length - 1].value : (hist.length > 0 ? hist[hist.length - 1].value : null);
+
+    card.innerHTML =
+      '<div class="spark-title">' + getIndicatorName(indId) + '</div>' +
+      '<div class="spark-value">' + fmt(lastVal) + ' <span style="font-size:0.7rem; color:var(--text-muted);">(' + foreEnd + ')</span></div>' +
+      '<canvas class="spark-canvas" width="260" height="60"></canvas>';
+
+    container.appendChild(card);
+
+    const canvas = card.querySelector('.spark-canvas');
+    drawSparkline(canvas, hist, fore, {
+      width: 260,
+      height: 60,
+      sdgTarget: targets[indId] != null ? targets[indId] : null
+    });
+  });
+}
+
+function renderCountryCausal() {
+  const container = document.getElementById('country-causal');
+  container.innerHTML = '';
+  if (!DATA.dag) {
+    container.innerHTML = '<li>No causal DAG data available</li>';
+    return;
+  }
+
+  const iso3 = SELECTED_COUNTRY;
+  // Show the causal parents for the main outcome indicators
+  const mainIndicators = ['life_exp','u5_mort','neo_mort','mat_mort','ncd_mort','hale'];
+  const dag = DATA.dag;
+
+  mainIndicators.forEach(function(child) {
+    const parents = dag[child];
+    if (!parents || parents.length === 0) return;
+
+    parents.forEach(function(edge) {
+      // edge = [parent, source, sign]
+      const parent = edge[0];
+      const source = edge[1];
+      const sign = edge[2];
+      const signSymbol = sign > 0 ? '+' : (sign < 0 ? '-' : '?');
+      const sourceLabel = source === 'domain' ? 'domain' : 'data';
+
+      const li = document.createElement('li');
+      li.innerHTML =
+        '<strong>' + getIndicatorName(parent) + '</strong>' +
+        ' <span class="causal-arrow">--(' + signSymbol + ')-></span> ' +
+        '<strong>' + getIndicatorName(child) + '</strong>' +
+        ' <span style="color:var(--text-muted);">(' + sourceLabel + ')</span>';
+      container.appendChild(li);
+    });
+  });
+
+  if (container.children.length === 0) {
+    container.innerHTML = '<li>No causal edges found for key indicators</li>';
+  }
+}
+
+
+// =====================================================================
+// VIEW 3: Counterfactual Sandbox
+// =====================================================================
+
+function initCounterfactual() {
+  const countrySel = document.getElementById('cf-country');
+  const varSel = document.getElementById('cf-variable');
+  const magSel = document.getElementById('cf-magnitude');
+
+  // Populate countries
+  countrySel.innerHTML = '';
+  getCountries().forEach(function(iso3) {
+    const opt = document.createElement('option');
+    opt.value = iso3;
+    opt.textContent = getCountryName(iso3) + ' (' + iso3 + ')';
+    countrySel.appendChild(opt);
+  });
+
+  // Populate interventions from counterfactual keys
+  const cfKeys = DATA.counterfactuals ? Object.keys(DATA.counterfactuals) : [];
+  const interventions = {};
+  cfKeys.forEach(function(k) {
+    // Key format: "che_gdp_1.0" => variable=che_gdp, magnitude=1.0
+    const parts = k.split('_');
+    // Find the magnitude (last part that parses as a number)
+    let mag = parseFloat(parts[parts.length - 1]);
+    let varName;
+    if (isFinite(mag)) {
+      varName = parts.slice(0, -1).join('_');
+    } else {
+      varName = k;
+      mag = null;
+    }
+    if (!interventions[varName]) interventions[varName] = [];
+    if (mag !== null) interventions[varName].push(mag);
+  });
+
+  varSel.innerHTML = '';
+  for (const v in interventions) {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = getIndicatorName(v);
+    varSel.appendChild(opt);
+  }
+
+  function updateMagnitudes() {
+    const v = varSel.value;
+    magSel.innerHTML = '';
+    if (interventions[v]) {
+      interventions[v].forEach(function(m) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = '+' + m;
+        magSel.appendChild(opt);
+      });
+    }
+  }
+
+  varSel.addEventListener('change', updateMagnitudes);
+  updateMagnitudes();
+
+  document.getElementById('cf-run').addEventListener('click', runCounterfactual);
+  document.getElementById('cf-export').addEventListener('click', exportCounterfactual);
+}
+
+function runCounterfactual() {
+  const iso3 = document.getElementById('cf-country').value;
+  const variable = document.getElementById('cf-variable').value;
+  const magnitude = document.getElementById('cf-magnitude').value;
+  const key = variable + '_' + magnitude;
+
+  if (!DATA.counterfactuals || !DATA.counterfactuals[key]) {
+    document.getElementById('cf-results').style.display = 'none';
+    document.getElementById('cf-affected').textContent = 'No counterfactual data for ' + key;
+    document.getElementById('cf-results').style.display = 'block';
+    return;
+  }
+
+  const cf = DATA.counterfactuals[key];
+  document.getElementById('cf-results').style.display = 'block';
+
+  // Affected indicators
+  const affected = cf.affected_indicators || [];
+  document.getElementById('cf-affected').innerHTML =
+    '<strong>Intervention:</strong> ' + getIndicatorName(variable) + ' +' + magnitude +
+    '<br><strong>Affected indicators (' + affected.length + '):</strong> ' +
+    affected.map(function(id) { return getIndicatorName(id); }).join(', ');
+
+  // Draw charts for affected indicators
+  const chartsContainer = document.getElementById('cf-charts');
+  chartsContainer.innerHTML = '';
+
+  // Filter baseline/counterfactual for this country
+  const baseline = (cf.baseline || []).filter(function(r) { return r.iso3 === iso3; });
+  const counterfactual = (cf.counterfactual || []).filter(function(r) { return r.iso3 === iso3; });
+
+  if (baseline.length === 0) {
+    chartsContainer.innerHTML = '<div class="card"><div class="no-data-overlay">No data for ' + getCountryName(iso3) + ' in this scenario</div></div>';
+    return;
+  }
+
+  // Sort by year
+  baseline.sort(function(a, b) { return a.year - b.year; });
+  counterfactual.sort(function(a, b) { return a.year - b.year; });
+
+  // Draw a chart for each affected indicator
+  affected.forEach(function(indId) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML =
+      '<h3>' + getIndicatorName(indId) + '</h3>' +
+      '<div class="chart-wrap"><canvas class="cf-chart" height="200"></canvas></div>';
+    chartsContainer.appendChild(card);
+
+    const canvas = card.querySelector('.cf-chart');
+    drawCFChart(canvas, baseline, counterfactual, indId);
+  });
+}
+
+function drawCFChart(canvas, baseline, counterfactual, indicator) {
+  const w = 500;
+  const h = 200;
+  const pad = { top: 20, right: 20, bottom: 30, left: 55 };
+  const ctx = setupCanvas(canvas, w, h);
+  ctx.clearRect(0, 0, w, h);
+
+  const meanKey = indicator + '_mean';
+  // Extract series
+  const bSeries = [];
+  const cSeries = [];
+  baseline.forEach(function(r) {
+    if (r[meanKey] != null) bSeries.push({ year: r.year, value: r[meanKey] });
+  });
+  counterfactual.forEach(function(r) {
+    if (r[meanKey] != null) cSeries.push({ year: r.year, value: r[meanKey] });
+  });
+
+  // Also try raw indicator key
+  if (bSeries.length === 0) {
+    baseline.forEach(function(r) {
+      if (r[indicator] != null) bSeries.push({ year: r.year, value: r[indicator] });
+    });
+  }
+  if (cSeries.length === 0) {
+    counterfactual.forEach(function(r) {
+      if (r[indicator] != null) cSeries.push({ year: r.year, value: r[indicator] });
+    });
+  }
+
+  if (bSeries.length === 0 && cSeries.length === 0) {
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '12px ' + getComputedStyle(document.body).fontFamily;
+    ctx.fillText('No data', w / 2 - 25, h / 2);
+    return;
+  }
+
+  const allPts = bSeries.concat(cSeries);
+  const years = allPts.map(function(p) { return p.year; });
+  const vals = allPts.map(function(p) { return p.value; });
+  const xMin = Math.min.apply(null, years);
+  const xMax = Math.max.apply(null, years);
+  let yMin = Math.min.apply(null, vals);
+  let yMax = Math.max.apply(null, vals);
+  if (yMin === yMax) { yMin -= 1; yMax += 1; }
+  const yPad = (yMax - yMin) * 0.1;
+  yMin -= yPad;
+  yMax += yPad;
+
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+  function sx(year) { return pad.left + (year - xMin) / (xMax - xMin) * plotW; }
+  function sy(val) { return pad.top + plotH - (val - yMin) / (yMax - yMin) * plotH; }
+
+  // Grid
+  ctx.strokeStyle = '#2a2e3a';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (plotH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(w - pad.right, y);
+    ctx.stroke();
+  }
+
+  // Axes labels
+  ctx.fillStyle = '#9aa0a6';
+  ctx.font = '10px ' + getComputedStyle(document.body).fontFamily;
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = yMin + ((yMax - yMin) / 4) * (4 - i);
+    ctx.fillText(fmt(v), pad.left - 4, pad.top + (plotH / 4) * i + 4);
+  }
+  ctx.textAlign = 'center';
+  const nLabels = Math.min(6, xMax - xMin + 1);
+  for (let i = 0; i <= nLabels; i++) {
+    const year = Math.round(xMin + (xMax - xMin) * (i / nLabels));
+    ctx.fillText(String(year), sx(year), h - pad.bottom + 15);
+  }
+
+  // Baseline line
+  function drawLine(series, color, dashed) {
+    if (series.length === 0) return;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    if (dashed) ctx.setLineDash([6, 4]);
+    else ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(sx(series[0].year), sy(series[0].value));
+    for (let i = 1; i < series.length; i++) {
+      ctx.lineTo(sx(series[i].year), sy(series[i].value));
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  drawLine(bSeries, '#9aa0a6', false);
+  drawLine(cSeries, '#4da6ff', false);
+
+  // Legend
+  ctx.font = '11px ' + getComputedStyle(document.body).fontFamily;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#9aa0a6';
+  ctx.fillText('Baseline', pad.left + 10, pad.top + 12);
+  ctx.fillStyle = '#4da6ff';
+  ctx.fillText('Counterfactual', pad.left + 80, pad.top + 12);
+}
+
+function exportCounterfactual() {
+  const iso3 = document.getElementById('cf-country').value;
+  const variable = document.getElementById('cf-variable').value;
+  const magnitude = document.getElementById('cf-magnitude').value;
+  const key = variable + '_' + magnitude;
+  const cf = DATA.counterfactuals ? DATA.counterfactuals[key] : null;
+  if (!cf) return;
+
+  const rows = [['type','iso3','year','indicator','value']];
+  const affected = cf.affected_indicators || [];
+
+  function addRows(data, type) {
+    (data || []).filter(function(r) { return r.iso3 === iso3; }).forEach(function(r) {
+      affected.forEach(function(ind) {
+        const meanKey = ind + '_mean';
+        const val = r[meanKey] != null ? r[meanKey] : (r[ind] != null ? r[ind] : '');
+        rows.push([type, r.iso3, r.year, ind, val]);
+      });
+    });
+  }
+
+  addRows(cf.baseline, 'baseline');
+  addRows(cf.counterfactual, 'counterfactual');
+
+  const csv = rows.map(function(r) { return r.join(','); }).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'counterfactual_' + iso3 + '_' + key + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+
+// =====================================================================
+// VIEW 4: Indicator Explorer
+// =====================================================================
+
+function initExplorer() {
+  const indSel = document.getElementById('ex-indicator');
+  const yearSel = document.getElementById('ex-year');
+  const regSel = document.getElementById('ex-region');
+  const scatterX = document.getElementById('ex-scatter-x');
+  const scatterY = document.getElementById('ex-scatter-y');
+
+  // Populate indicator selectors
+  indSel.innerHTML = '';
+  scatterX.innerHTML = '';
+  scatterY.innerHTML = '';
+  INDICATOR_LIST.forEach(function(ind) {
+    const opt1 = document.createElement('option');
+    opt1.value = ind.id; opt1.textContent = ind.name;
+    indSel.appendChild(opt1);
+
+    const opt2 = opt1.cloneNode(true);
+    scatterX.appendChild(opt2);
+    const opt3 = opt1.cloneNode(true);
+    scatterY.appendChild(opt3);
+  });
+
+  if (INDICATOR_LIST.length > 1) scatterY.value = INDICATOR_LIST[1].id;
+
+  // Populate years
+  yearSel.innerHTML = '';
+  const valEnd = getLastHistYear();
+  const foreEnd = getLastForecastYear();
+  for (let y = foreEnd; y >= 1990; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y + (y > valEnd ? ' (forecast)' : '');
+    yearSel.appendChild(opt);
+  }
+
+  // Populate regions
+  regSel.innerHTML = '<option value="all">All Africa</option>';
+  if (DATA.meta.regions) {
+    for (const r in DATA.meta.regions) {
+      const opt = document.createElement('option');
+      opt.value = r;
+      opt.textContent = r + ' (' + DATA.meta.regions[r].length + ')';
+      regSel.appendChild(opt);
+    }
+  }
+
+  // Restore
+  const savedInd = localStorage.getItem('af_ex_indicator');
+  if (savedInd && indSel.querySelector('option[value="' + savedInd + '"]')) {
+    indSel.value = savedInd;
+  }
+
+  indSel.addEventListener('change', function() {
+    localStorage.setItem('af_ex_indicator', indSel.value);
+    renderExplorerBar();
+    renderExplorerTS();
+  });
+  yearSel.addEventListener('change', renderExplorerBar);
+  regSel.addEventListener('change', renderExplorerBar);
+  scatterX.addEventListener('change', renderExplorerScatter);
+  scatterY.addEventListener('change', renderExplorerScatter);
+
+  document.getElementById('ex-ts-clear').addEventListener('click', function() {
+    TS_SELECTED = [];
+    updateTSLabel();
+    renderExplorerTS();
+  });
+
+  renderExplorerBar();
+  renderExplorerScatter();
+  renderExplorerTS();
+}
+
+function renderExplorerBar() {
+  const canvas = document.getElementById('ex-bar-canvas');
+  const indicator = document.getElementById('ex-indicator').value;
+  const year = parseInt(document.getElementById('ex-year').value, 10);
+  const regionFilter = document.getElementById('ex-region').value;
+  const valEnd = getLastHistYear();
+
+  // Gather data
+  let countries = getCountries();
+  if (regionFilter !== 'all' && DATA.meta.regions && DATA.meta.regions[regionFilter]) {
+    const regionCountries = DATA.meta.regions[regionFilter];
+    countries = countries.filter(function(c) { return regionCountries.indexOf(c) >= 0; });
+  }
+
+  const data = [];
+  countries.forEach(function(iso3) {
+    let v;
+    if (year <= valEnd) {
+      v = getHistFast(iso3, indicator, year);
+    } else {
+      v = getForeFast(iso3, indicator, year);
+    }
+    if (v != null) data.push({ iso3: iso3, value: v });
+  });
+
+  data.sort(function(a, b) { return b.value - a.value; });
+
+  const w = 500;
+  const barH = 16;
+  const gap = 2;
+  const pad = { top: 10, right: 20, bottom: 10, left: 60 };
+  const h = Math.max(200, pad.top + pad.bottom + data.length * (barH + gap));
+
+  canvas.style.height = h + 'px';
+  const ctx = setupCanvas(canvas, w, h);
+  ctx.clearRect(0, 0, w, h);
+
+  if (data.length === 0) {
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '12px ' + getComputedStyle(document.body).fontFamily;
+    ctx.fillText('No data for this year/indicator', w / 2 - 80, h / 2);
+    return;
+  }
+
+  const maxVal = Math.max.apply(null, data.map(function(d) { return Math.abs(d.value); }));
+  const plotW = w - pad.left - pad.right;
+
+  data.forEach(function(d, i) {
+    const y = pad.top + i * (barH + gap);
+    const barW = Math.max(1, (Math.abs(d.value) / maxVal) * plotW);
+    const region = getRegion(d.iso3);
+    const col = REGION_COLORS[region] || '#4da6ff';
+
+    ctx.fillStyle = col;
+    ctx.globalAlpha = 0.8;
+    ctx.fillRect(pad.left, y, barW, barH);
+    ctx.globalAlpha = 1;
+
+    // Label
+    ctx.fillStyle = '#e8eaed';
+    ctx.font = '10px ' + getComputedStyle(document.body).fontFamily;
+    ctx.textAlign = 'right';
+    ctx.fillText(d.iso3, pad.left - 4, y + barH - 3);
+
+    // Value
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#9aa0a6';
+    ctx.fillText(fmt(d.value), pad.left + barW + 4, y + barH - 3);
+  });
+
+  // Store data for click interaction
+  canvas._barData = data;
+  canvas._barH = barH;
+  canvas._barGap = gap;
+  canvas._padTop = pad.top;
+
+  // Click handler for bar selection
+  canvas.onclick = function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const my = (e.clientY - rect.top);
+    const idx = Math.floor((my - pad.top) / (barH + gap));
+    if (idx >= 0 && idx < data.length) {
+      const iso3 = data[idx].iso3;
+      if (TS_SELECTED.indexOf(iso3) < 0) {
+        TS_SELECTED.push(iso3);
+        if (TS_SELECTED.length > 8) TS_SELECTED.shift();
+      }
+      updateTSLabel();
+      renderExplorerTS();
+    }
+  };
+}
+
+function updateTSLabel() {
+  const label = document.getElementById('ex-ts-selected');
+  if (TS_SELECTED.length === 0) {
+    label.textContent = 'None selected';
+  } else {
+    label.textContent = TS_SELECTED.map(function(c) { return getCountryName(c); }).join(', ');
+  }
+}
+
+function renderExplorerTS() {
+  const canvas = document.getElementById('ex-ts-canvas');
+  const indicator = document.getElementById('ex-indicator').value;
+  const w = 700;
+  const h = 300;
+  const pad = { top: 20, right: 20, bottom: 30, left: 55 };
+  const ctx = setupCanvas(canvas, w, h);
+  ctx.clearRect(0, 0, w, h);
+
+  if (TS_SELECTED.length === 0) {
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '12px ' + getComputedStyle(document.body).fontFamily;
+    ctx.textAlign = 'center';
+    ctx.fillText('Click country bars to add time series', w / 2, h / 2);
+    return;
+  }
+
+  // Gather all series
+  const series = [];
+  let gYears = [];
+  TS_SELECTED.forEach(function(iso3) {
+    const hist = getHistoricalSeries(iso3, indicator);
+    const fore = getForecastSeries(iso3, indicator);
+    const pts = hist.map(function(p) { return { year: p.year, value: p.value }; });
+    fore.forEach(function(p) { pts.push({ year: p.year, value: p.value }); });
+    pts.sort(function(a, b) { return a.year - b.year; });
+    series.push({ iso3: iso3, pts: pts });
+    pts.forEach(function(p) { gYears.push(p.year); });
+  });
+
+  if (gYears.length === 0) {
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '12px ' + getComputedStyle(document.body).fontFamily;
+    ctx.textAlign = 'center';
+    ctx.fillText('No data for selected countries', w / 2, h / 2);
+    return;
+  }
+
+  const xMin = Math.min.apply(null, gYears);
+  const xMax = Math.max.apply(null, gYears);
+  let allVals = [];
+  series.forEach(function(s) {
+    s.pts.forEach(function(p) { allVals.push(p.value); });
+  });
+  let yMin = Math.min.apply(null, allVals);
+  let yMax = Math.max.apply(null, allVals);
+  if (yMin === yMax) { yMin -= 1; yMax += 1; }
+  const yPad = (yMax - yMin) * 0.05;
+  yMin -= yPad;
+  yMax += yPad;
+
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+  function sx(year) { return pad.left + (year - xMin) / (xMax - xMin) * plotW; }
+  function sy(val) { return pad.top + plotH - (val - yMin) / (yMax - yMin) * plotH; }
+
+  // Grid
+  ctx.strokeStyle = '#2a2e3a';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (plotH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(w - pad.right, y);
+    ctx.stroke();
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#9aa0a6';
+  ctx.font = '10px ' + getComputedStyle(document.body).fontFamily;
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = yMin + ((yMax - yMin) / 4) * (4 - i);
+    ctx.fillText(fmt(v), pad.left - 4, pad.top + (plotH / 4) * i + 4);
+  }
+  ctx.textAlign = 'center';
+  for (let y = Math.ceil(xMin / 5) * 5; y <= xMax; y += 5) {
+    ctx.fillText(String(y), sx(y), h - pad.bottom + 15);
+  }
+
+  // Validation end vertical line
+  const valEnd = getLastHistYear();
+  if (valEnd >= xMin && valEnd <= xMax) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(sx(valEnd), pad.top);
+    ctx.lineTo(sx(valEnd), h - pad.bottom);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw each country series
+  series.forEach(function(s, idx) {
+    if (s.pts.length === 0) return;
+    const color = SERIES_COLORS[idx % SERIES_COLORS.length];
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(sx(s.pts[0].year), sy(s.pts[0].value));
+    for (let i = 1; i < s.pts.length; i++) {
+      ctx.lineTo(sx(s.pts[i].year), sy(s.pts[i].value));
+    }
+    ctx.stroke();
+
+    // Label at end
+    const last = s.pts[s.pts.length - 1];
+    ctx.fillStyle = color;
+    ctx.font = '10px ' + getComputedStyle(document.body).fontFamily;
+    ctx.textAlign = 'left';
+    ctx.fillText(s.iso3, sx(last.year) + 4, sy(last.value) + 3);
+  });
+}
+
+function renderExplorerScatter() {
+  const canvas = document.getElementById('ex-scatter-canvas');
+  const xInd = document.getElementById('ex-scatter-x').value;
+  const yInd = document.getElementById('ex-scatter-y').value;
+  document.getElementById('ex-scatter-title').textContent = getIndicatorName(yInd) + ' vs ' + getIndicatorName(xInd);
+
+  const w = 400;
+  const h = 400;
+  const pad = { top: 20, right: 20, bottom: 35, left: 55 };
+  const ctx = setupCanvas(canvas, w, h);
+  ctx.clearRect(0, 0, w, h);
+
+  const valEnd = getLastHistYear();
+  const countries = getCountries();
+  const pts = [];
+
+  countries.forEach(function(iso3) {
+    const xv = getHistFast(iso3, xInd, valEnd);
+    const yv = getHistFast(iso3, yInd, valEnd);
+    if (xv != null && yv != null) {
+      pts.push({ iso3: iso3, x: xv, y: yv, region: getRegion(iso3) });
+    }
+  });
+
+  if (pts.length === 0) {
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '12px ' + getComputedStyle(document.body).fontFamily;
+    ctx.textAlign = 'center';
+    ctx.fillText('No data', w / 2, h / 2);
+    return;
+  }
+
+  const xs = pts.map(function(p) { return p.x; });
+  const ys = pts.map(function(p) { return p.y; });
+  let xMin = Math.min.apply(null, xs);
+  let xMax = Math.max.apply(null, xs);
+  let yMin = Math.min.apply(null, ys);
+  let yMax = Math.max.apply(null, ys);
+  if (xMin === xMax) { xMin -= 1; xMax += 1; }
+  if (yMin === yMax) { yMin -= 1; yMax += 1; }
+  const xPad = (xMax - xMin) * 0.05;
+  const yPad = (yMax - yMin) * 0.05;
+  xMin -= xPad; xMax += xPad;
+  yMin -= yPad; yMax += yPad;
+
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+  function sx(v) { return pad.left + (v - xMin) / (xMax - xMin) * plotW; }
+  function sy(v) { return pad.top + plotH - (v - yMin) / (yMax - yMin) * plotH; }
+
+  // Grid
+  ctx.strokeStyle = '#2a2e3a';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (plotH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    const x = pad.left + (plotW / 4) * i;
+    ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, h - pad.bottom); ctx.stroke();
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#9aa0a6';
+  ctx.font = '10px ' + getComputedStyle(document.body).fontFamily;
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = yMin + ((yMax - yMin) / 4) * (4 - i);
+    ctx.fillText(fmt(v), pad.left - 4, pad.top + (plotH / 4) * i + 4);
+  }
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= 4; i++) {
+    const v = xMin + ((xMax - xMin) / 4) * i;
+    ctx.fillText(fmt(v), pad.left + (plotW / 4) * i, h - pad.bottom + 15);
+  }
+
+  // Dots
+  pts.forEach(function(p) {
+    const color = REGION_COLORS[p.region] || '#4da6ff';
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.arc(sx(p.x), sy(p.y), 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+
+  // Labels for a few key countries
+  ctx.font = '9px ' + getComputedStyle(document.body).fontFamily;
+  ctx.textAlign = 'left';
+  const labelSet = ['NGA','ETH','ZAF','EGY','KEN','COD','GHA','TZA','DZA','MAR'];
+  pts.forEach(function(p) {
+    if (labelSet.indexOf(p.iso3) >= 0) {
+      ctx.fillStyle = '#e8eaed';
+      ctx.fillText(p.iso3, sx(p.x) + 7, sy(p.y) + 3);
+    }
+  });
+}
+
+
+// =====================================================================
+// VIEW 5: Model Transparency
+// =====================================================================
+
+function initTransparency() {
+  renderWeightsTable();
+  renderValidationTable();
+  renderProvenance();
+  initDAG();
+}
+
+function renderWeightsTable() {
+  const wrap = document.getElementById('weights-table-wrap');
+  const weights = DATA.ensemble_weights;
+  if (!weights || Object.keys(weights).length === 0) {
+    wrap.innerHTML = '<div class="no-data-overlay">No ensemble weights data</div>';
+    return;
+  }
+
+  // Collect model names
+  const models = new Set();
+  for (const ind in weights) {
+    for (const m in weights[ind]) {
+      models.add(m);
+    }
+  }
+  const modelList = Array.from(models).sort();
+
+  let html = '<table class="data-table"><thead><tr><th>Indicator</th>';
+  modelList.forEach(function(m) { html += '<th>' + m + '</th>'; });
+  html += '</tr></thead><tbody>';
+
+  const inds = Object.keys(weights).sort();
+  inds.forEach(function(ind) {
+    html += '<tr><td>' + getIndicatorName(ind) + '</td>';
+    modelList.forEach(function(m) {
+      const v = weights[ind][m];
+      html += '<td style="font-family:var(--mono);">' + (v != null ? (v * 100).toFixed(1) + '%' : '--') + '</td>';
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function renderValidationTable() {
+  const wrap = document.getElementById('validation-table-wrap');
+  const val = DATA.validation;
+  if (!val || val.status === 'skipped') {
+    wrap.innerHTML = '<div class="no-data-overlay">Validation was skipped</div>';
+    return;
+  }
+
+  // Try to render whatever structure we have
+  if (val.per_indicator && Array.isArray(val.per_indicator)) {
+    let html = '<table class="data-table"><thead><tr><th>Indicator</th><th>RMSE</th><th>MAE</th><th>Coverage</th></tr></thead><tbody>';
+    val.per_indicator.forEach(function(row) {
+      html += '<tr><td>' + getIndicatorName(row.indicator || row.name || '') + '</td>';
+      html += '<td style="font-family:var(--mono);">' + fmt(row.rmse, 3) + '</td>';
+      html += '<td style="font-family:var(--mono);">' + fmt(row.mae, 3) + '</td>';
+      html += '<td style="font-family:var(--mono);">' + fmt(row.coverage, 3) + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    if (val.overall_rmse != null) {
+      html += '<p style="margin-top:8px; color:var(--text-secondary); font-size:0.85rem;">Overall RMSE: <strong style="color:var(--accent);">' + fmt(val.overall_rmse, 4) + '</strong></p>';
+    }
+    wrap.innerHTML = html;
+  } else {
+    // Generic key-value display
+    let html = '<table class="data-table"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
+    for (const k in val) {
+      if (typeof val[k] !== 'object') {
+        html += '<tr><td>' + k + '</td><td style="font-family:var(--mono);">' + val[k] + '</td></tr>';
+      }
+    }
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+}
+
+function renderProvenance() {
+  const div = document.getElementById('provenance-info');
+  const meta = DATA.meta;
+  div.innerHTML =
+    '<p><strong>Project:</strong> ' + (meta.project || 'AfricaForecast') + ' v' + (meta.version || '1.0') + '</p>' +
+    '<p><strong>Training period:</strong> up to ' + (meta.train_end || '?') + '</p>' +
+    '<p><strong>Validation period:</strong> ' + ((meta.train_end || 0) + 1) + ' - ' + (meta.validate_end || '?') + '</p>' +
+    '<p><strong>Forecast horizon:</strong> ' + (meta.forecast_horizon || '?') + ' years (' + ((meta.validate_end || 0) + 1) + ' - ' + getLastForecastYear() + ')</p>' +
+    '<p><strong>Seed:</strong> ' + (meta.seed || '42') + '</p>' +
+    '<p><strong>Sources:</strong> WHO GHO, World Bank WDI, IHME GBD, UN WPP (OA only)</p>' +
+    '<p><strong>Countries:</strong> ' + getCountries().length + ' AU member states</p>' +
+    '<p><strong>Indicators:</strong> ' + getIndicators().length + ' (comprehensive + disease + systems + covariates)</p>';
+}
+
+
+// =====================================================================
+// DAG Visualisation (force-directed layout)
+// =====================================================================
+
+let dagNodes = [];
+let dagEdges = [];
+let dagDragging = null;
+let dagDragOffset = { x: 0, y: 0 };
+let dagAnimFrame = null;
+
+function initDAG() {
+  if (!DATA.dag) return;
+
+  const dag = DATA.dag;
+  const filterSel = document.getElementById('dag-filter');
+  filterSel.innerHTML = '<option value="">All nodes</option>';
+
+  // Build node list
+  const nodeSet = new Set();
+  const edgeList = [];
+  for (const child in dag) {
+    nodeSet.add(child);
+    const parents = dag[child];
+    if (Array.isArray(parents)) {
+      parents.forEach(function(e) {
+        // e = [parent, source, sign]
+        const parent = e[0];
+        nodeSet.add(parent);
+        edgeList.push({
+          from: parent,
+          to: child,
+          source: e[1],
+          sign: e[2]
+        });
+      });
+    }
+  }
+
+  const nodeList = Array.from(nodeSet);
+  filterSel.innerHTML = '<option value="">All nodes (' + nodeList.length + ')</option>';
+  nodeList.sort().forEach(function(n) {
+    const opt = document.createElement('option');
+    opt.value = n;
+    opt.textContent = getIndicatorName(n);
+    filterSel.appendChild(opt);
+  });
+
+  // Assign initial positions in a circle
+  const canvas = document.getElementById('dag-canvas');
+  const wrap = document.getElementById('dag-canvas-wrap');
+  const w = wrap.clientWidth || 600;
+  const h = 500;
+  const cx = w / 2;
+  const cy = h / 2;
+  const radius = Math.min(w, h) * 0.38;
+
+  dagNodes = nodeList.map(function(id, i) {
+    const angle = (2 * Math.PI * i) / nodeList.length;
+    return {
+      id: id,
+      x: cx + radius * Math.cos(angle),
+      y: cy + radius * Math.sin(angle),
+      vx: 0,
+      vy: 0,
+      label: id.length > 12 ? id.substring(0, 10) + '..' : id
+    };
+  });
+
+  dagEdges = edgeList;
+
+  // Run force simulation
+  for (let iter = 0; iter < 200; iter++) {
+    forceStep(dagNodes, dagEdges, w, h);
+  }
+
+  filterSel.addEventListener('change', function() {
+    renderDAG();
+  });
+
+  // Mouse interaction for dragging
+  canvas.addEventListener('mousedown', dagMouseDown);
+  canvas.addEventListener('mousemove', dagMouseMove);
+  canvas.addEventListener('mouseup', dagMouseUp);
+  canvas.addEventListener('mouseleave', dagMouseUp);
+
+  renderDAG();
+}
+
+function forceStep(nodes, edges, w, h) {
+  const repulsion = 800;
+  const attraction = 0.005;
+  const damping = 0.85;
+  const centerPull = 0.001;
+  const cx = w / 2;
+  const cy = h / 2;
+
+  // Repulsion between all nodes
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      let dx = nodes[i].x - nodes[j].x;
+      let dy = nodes[i].y - nodes[j].y;
+      let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      let force = repulsion / (dist * dist);
+      let fx = (dx / dist) * force;
+      let fy = (dy / dist) * force;
+      nodes[i].vx += fx;
+      nodes[i].vy += fy;
+      nodes[j].vx -= fx;
+      nodes[j].vy -= fy;
+    }
+  }
+
+  // Attraction along edges
+  const nodeMap = {};
+  nodes.forEach(function(n) { nodeMap[n.id] = n; });
+  edges.forEach(function(e) {
+    const from = nodeMap[e.from];
+    const to = nodeMap[e.to];
+    if (!from || !to) return;
+    let dx = to.x - from.x;
+    let dy = to.y - from.y;
+    let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    let force = dist * attraction;
+    let fx = (dx / dist) * force;
+    let fy = (dy / dist) * force;
+    from.vx += fx;
+    from.vy += fy;
+    to.vx -= fx;
+    to.vy -= fy;
+  });
+
+  // Centre pull
+  nodes.forEach(function(n) {
+    n.vx += (cx - n.x) * centerPull;
+    n.vy += (cy - n.y) * centerPull;
+  });
+
+  // Apply velocities with damping and bounds
+  nodes.forEach(function(n) {
+    n.vx *= damping;
+    n.vy *= damping;
+    n.x += n.vx;
+    n.y += n.vy;
+    n.x = Math.max(40, Math.min(w - 40, n.x));
+    n.y = Math.max(20, Math.min(h - 20, n.y));
+  });
+}
+
+function renderDAG() {
+  const canvas = document.getElementById('dag-canvas');
+  const wrap = document.getElementById('dag-canvas-wrap');
+  const w = wrap.clientWidth || 600;
+  const h = 500;
+  const ctx = setupCanvas(canvas, w, h);
+  ctx.clearRect(0, 0, w, h);
+
+  const filter = document.getElementById('dag-filter').value;
+  const nodeMap = {};
+  dagNodes.forEach(function(n) { nodeMap[n.id] = n; });
+
+  // Determine visible nodes
+  let visibleNodes;
+  let visibleEdges;
+  if (filter) {
+    // Show filter node + its parents and children
+    const related = new Set([filter]);
+    dagEdges.forEach(function(e) {
+      if (e.from === filter || e.to === filter) {
+        related.add(e.from);
+        related.add(e.to);
+      }
+    });
+    visibleNodes = dagNodes.filter(function(n) { return related.has(n.id); });
+    visibleEdges = dagEdges.filter(function(e) { return related.has(e.from) && related.has(e.to); });
+  } else {
+    visibleNodes = dagNodes;
+    visibleEdges = dagEdges;
+  }
+
+  // Draw edges
+  visibleEdges.forEach(function(e) {
+    const from = nodeMap[e.from];
+    const to = nodeMap[e.to];
+    if (!from || !to) return;
+
+    ctx.strokeStyle = e.sign > 0 ? 'rgba(52,211,153,0.5)' : (e.sign < 0 ? 'rgba(248,113,113,0.5)' : 'rgba(155,155,155,0.4)');
+    ctx.lineWidth = 1.5;
+
+    if (e.source === 'domain') {
+      ctx.setLineDash([]);
+    } else {
+      ctx.setLineDash([4, 4]);
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(to.x, to.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Arrowhead
+    const angle = Math.atan2(to.y - from.y, to.x - from.x);
+    const aLen = 8;
+    const headX = to.x - Math.cos(angle) * 14;
+    const headY = to.y - Math.sin(angle) * 14;
+
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.beginPath();
+    ctx.moveTo(headX, headY);
+    ctx.lineTo(headX - aLen * Math.cos(angle - 0.4), headY - aLen * Math.sin(angle - 0.4));
+    ctx.lineTo(headX - aLen * Math.cos(angle + 0.4), headY - aLen * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  // Draw nodes
+  visibleNodes.forEach(function(n) {
+    const isFiltered = filter && n.id === filter;
+    const r = isFiltered ? 12 : 8;
+
+    // Domain colour
+    let domain = 'covariate';
+    const domains = DATA.meta.pilot_domains || {};
+    for (const d in domains) {
+      if (domains[d].indexOf(n.id) >= 0) { domain = d; break; }
+    }
+    const domainColors = {
+      comprehensive: '#4da6ff',
+      disease: '#f87171',
+      systems: '#34d399',
+      covariate: '#9aa0a6'
+    };
+
+    ctx.fillStyle = domainColors[domain] || '#9aa0a6';
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (isFiltered) {
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Label
+    ctx.fillStyle = '#e8eaed';
+    ctx.font = (isFiltered ? '11px' : '9px') + ' ' + getComputedStyle(document.body).fontFamily;
+    ctx.textAlign = 'center';
+    ctx.fillText(n.label, n.x, n.y - r - 4);
+  });
+}
+
+function dagMouseDown(e) {
+  const canvas = document.getElementById('dag-canvas');
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  for (let i = 0; i < dagNodes.length; i++) {
+    const n = dagNodes[i];
+    const dx = mx - n.x;
+    const dy = my - n.y;
+    if (dx * dx + dy * dy < 200) {
+      dagDragging = n;
+      dagDragOffset = { x: dx, y: dy };
+      break;
+    }
+  }
+}
+
+function dagMouseMove(e) {
+  if (!dagDragging) return;
+  const canvas = document.getElementById('dag-canvas');
+  const rect = canvas.getBoundingClientRect();
+  dagDragging.x = e.clientX - rect.left - dagDragOffset.x;
+  dagDragging.y = e.clientY - rect.top - dagDragOffset.y;
+  renderDAG();
+}
+
+function dagMouseUp() {
+  dagDragging = null;
+}
+
+
+// =====================================================================
+// Keyboard shortcuts
+// =====================================================================
+
+document.addEventListener('keydown', function(e) {
+  // 1-5 switch views
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+  if (!DATA) return;
+
+  const viewMap = {
+    '1': 'view-overview',
+    '2': 'view-country',
+    '3': 'view-counterfactual',
+    '4': 'view-explorer',
+    '5': 'view-transparency'
+  };
+
+  if (viewMap[e.key]) {
+    e.preventDefault();
+    switchView(viewMap[e.key]);
+  }
+});
+
+
+// =====================================================================
+// Demo mode: generate synthetic data if no file loaded
+// =====================================================================
+
+function generateDemoData() {
+  const countries = Object.keys(COUNTRY_NAMES);
+  const indicators = [
+    'life_exp','u5_mort','neo_mort','mat_mort','ncd_mort','hale',
+    'hiv_prev','mal_inc','tb_inc','uhc_index','dtp3','che_gdp',
+    'physicians','gdp_pc','schooling'
+  ];
+  const indicatorNames = {
+    life_exp:'Life expectancy',u5_mort:'Under-5 mortality',neo_mort:'Neonatal mortality',
+    mat_mort:'Maternal mortality',ncd_mort:'NCD mortality',hale:'Healthy life expectancy',
+    hiv_prev:'HIV prevalence',mal_inc:'Malaria incidence',tb_inc:'TB incidence',
+    uhc_index:'UHC index',dtp3:'DTP3 coverage',che_gdp:'Health expenditure % GDP',
+    physicians:'Physician density',gdp_pc:'GDP per capita',schooling:'Mean years schooling'
+  };
+
+  const regions = {
+    North:['DZA','EGY','LBY','MRT','MAR','TUN','SDN'],
+    West:['BEN','BFA','CPV','CIV','GMB','GHA','GIN','GNB','LBR','MLI','NER','NGA','SEN','SLE','TGO'],
+    Central:['CMR','CAF','TCD','COG','COD','GNQ','GAB','STP'],
+    East:['BDI','COM','DJI','ERI','ETH','KEN','MDG','MWI','MUS','MOZ','RWA','SYC','SOM','SSD','TZA','UGA'],
+    Southern:['AGO','BWA','SWZ','LSO','NAM','ZAF','ZMB','ZWE']
+  };
+
+  const countryRegion = {};
+  for (const r in regions) {
+    regions[r].forEach(function(c) { countryRegion[c] = r; });
+  }
+
+  const rng = xoshiro128ss(42);
+
+  // Base values per indicator (roughly realistic)
+  const bases = {
+    life_exp:60,u5_mort:80,neo_mort:28,mat_mort:500,ncd_mort:22,hale:52,
+    hiv_prev:3,mal_inc:150,tb_inc:200,uhc_index:45,dtp3:72,che_gdp:5,
+    physicians:0.5,gdp_pc:3000,schooling:5
+  };
+  const trends = {
+    life_exp:0.3,u5_mort:-2,neo_mort:-0.6,mat_mort:-10,ncd_mort:-0.2,hale:0.25,
+    hiv_prev:-0.05,mal_inc:-4,tb_inc:-4,uhc_index:0.8,dtp3:0.6,che_gdp:0.05,
+    physicians:0.02,gdp_pc:80,schooling:0.1
+  };
+
+  const historical = [];
+  const forecasts = [];
+
+  countries.forEach(function(iso3, ci) {
+    const offset = (rng() - 0.5) * 0.4;
+    for (let y = 1990; y <= 2021; y++) {
+      const row = { iso3: iso3, year: y };
+      indicators.forEach(function(ind) {
+        const base = bases[ind] * (1 + offset);
+        const trend = trends[ind] * (y - 2000);
+        const noise = (rng() - 0.5) * base * 0.05;
+        row[ind] = Math.max(0, base + trend + noise);
+      });
+      historical.push(row);
+    }
+    for (let y = 2022; y <= 2036; y++) {
+      const row = { iso3: iso3, year: y };
+      indicators.forEach(function(ind) {
+        const base = bases[ind] * (1 + offset);
+        const trend = trends[ind] * (y - 2000);
+        const noise = (rng() - 0.5) * base * 0.03;
+        const mean = Math.max(0, base + trend + noise);
+        const ci80 = mean * 0.08 * (y - 2021);
+        row[ind + '_mean'] = mean;
+        row[ind + '_lo80'] = mean - ci80;
+        row[ind + '_hi80'] = mean + ci80;
+      });
+      forecasts.push(row);
+    }
+  });
+
+  // Simple DAG
+  const dag = {
+    life_exp: [['che_gdp','domain',1],['physicians','domain',1],['gdp_pc','data',1],['schooling','domain',1]],
+    u5_mort: [['dtp3','domain',-1],['physicians','domain',-1],['che_gdp','data',-1],['schooling','domain',-1]],
+    neo_mort: [['physicians','domain',-1],['che_gdp','domain',-1]],
+    mat_mort: [['physicians','domain',-1],['che_gdp','domain',-1],['schooling','data',-1]],
+    ncd_mort: [['che_gdp','domain',-1],['gdp_pc','data',-1]],
+    hale: [['che_gdp','domain',1],['uhc_index','data',1]],
+    hiv_prev: [['che_gdp','data',-1]],
+    mal_inc: [['che_gdp','domain',-1],['dtp3','data',-1]],
+    tb_inc: [['che_gdp','domain',-1],['physicians','data',-1]],
+    uhc_index: [['che_gdp','domain',1],['physicians','domain',1],['gdp_pc','data',1]],
+    dtp3: [['che_gdp','domain',1]]
+  };
+
+  // Ensemble weights
+  const ensembleWeights = {};
+  indicators.forEach(function(ind) {
+    ensembleWeights[ind] = {
+      ridge: 0.3 + rng() * 0.1,
+      gp: 0.3 + rng() * 0.1,
+      ets: 0.3 + rng() * 0.1
+    };
+    // Normalise
+    const total = ensembleWeights[ind].ridge + ensembleWeights[ind].gp + ensembleWeights[ind].ets;
+    ensembleWeights[ind].ridge /= total;
+    ensembleWeights[ind].gp /= total;
+    ensembleWeights[ind].ets /= total;
+  });
+
+  // Counterfactuals
+  const counterfactuals = {};
+  const cfVars = { che_gdp: [1.0, 3.0], physicians: [1.5, 2.0] };
+  for (const v in cfVars) {
+    cfVars[v].forEach(function(mag) {
+      const key = v + '_' + mag;
+      const affected = [];
+      for (const child in dag) {
+        const parents = dag[child];
+        for (let i = 0; i < parents.length; i++) {
+          if (parents[i][0] === v) { affected.push(child); break; }
+        }
+      }
+      const bRows = [];
+      const cRows = [];
+      countries.forEach(function(iso3) {
+        for (let y = 2022; y <= 2036; y++) {
+          const bRow = { iso3: iso3, year: y };
+          const cRow = { iso3: iso3, year: y };
+          affected.forEach(function(ind) {
+            const base = bases[ind] * (1 + (rng() - 0.5) * 0.3);
+            const trend = trends[ind] * (y - 2000);
+            bRow[ind + '_mean'] = Math.max(0, base + trend);
+            cRow[ind + '_mean'] = Math.max(0, base + trend + mag * trends[ind] * 0.5);
+          });
+          bRows.push(bRow);
+          cRows.push(cRow);
+        }
+      });
+      counterfactuals[key] = {
+        intervention: {}, intervention_type: 'add',
+        affected_indicators: affected,
+        baseline: bRows, counterfactual: cRows
+      };
+      counterfactuals[key].intervention[v] = mag;
+    });
+  }
+
+  // Validation
+  const validation = {
+    overall_rmse: 2.5 + rng() * 0.5,
+    per_indicator: indicators.map(function(ind) {
+      return { indicator: ind, rmse: 1 + rng() * 3, mae: 0.8 + rng() * 2, coverage: 0.75 + rng() * 0.15 };
+    })
+  };
+
+  return {
+    meta: {
+      project: 'AfricaForecast', version: '1.0.0-demo',
+      countries: countries, indicators: indicators,
+      indicator_names: indicatorNames,
+      regions: regions, country_region: countryRegion,
+      pilot_domains: {
+        comprehensive: ['life_exp','u5_mort','neo_mort','mat_mort','ncd_mort','hale'],
+        disease: ['hiv_prev','mal_inc','tb_inc'],
+        systems: ['uhc_index','dtp3','che_gdp','physicians']
+      },
+      sdg_targets: { u5_mort:25,neo_mort:12,mat_mort:70,tb_inc:20,mal_inc:10,uhc_index:80,ncd_mort:20 },
+      train_end: 2015, validate_end: 2021, forecast_horizon: 15, seed: 42
+    },
+    historical: historical,
+    forecasts: forecasts,
+    counterfactuals: counterfactuals,
+    dag: dag,
+    ensemble_weights: ensembleWeights,
+    validation: validation
+  };
+}
+
+
+// =====================================================================
+// Initialise demo on load (user can still load real data)
+// =====================================================================
+
+window.addEventListener('DOMContentLoaded', function() {
+  // Check if user wants demo
+  const status = document.getElementById('load-status');
+  status.innerHTML = 'No data loaded. <button id="demo-btn" style="font-size:0.8rem; padding:2px 10px;">Load Demo</button>';
+  document.getElementById('demo-btn').addEventListener('click', function() {
+    DATA = generateDemoData();
+    buildIndices();
+    status.textContent = 'Demo data loaded (54 countries, ' + getIndicators().length + ' indicators)';
+    status.style.color = 'var(--green)';
+    onDataLoaded();
+  });
+});
+
+</script>
+</body>
+</html>
