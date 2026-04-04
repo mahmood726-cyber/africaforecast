@@ -1,0 +1,12 @@
+{
+  "checksum": "ac73b4971449dea1a60a02b9f1da5f7023b9152df7a4423fa7b92e15933ee2a4",
+  "source": "WHO",
+  "query": "MALARIA_EST_INCIDENCE",
+  "rows": 1226,
+  "columns": [
+    "iso3",
+    "year",
+    "mal_inc"
+  ],
+  "saved_at": "2026-04-03T20:38:54.540031+00:00"
+}

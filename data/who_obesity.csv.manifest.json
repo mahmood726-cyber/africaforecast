@@ -1,0 +1,12 @@
+{
+  "checksum": "6476137afd48fba16b90d657b3e6b0eba0b047f17f572a55173ceebab00143c3",
+  "source": "WHO",
+  "query": "NCD_BMI_30A",
+  "rows": 5346,
+  "columns": [
+    "iso3",
+    "year",
+    "obesity"
+  ],
+  "saved_at": "2026-04-03T20:38:51.118024+00:00"
+}

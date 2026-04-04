@@ -1,0 +1,12 @@
+{
+  "checksum": "ae63df4917bebcaba7780f3f167c73221827c3255ad56acfe9c9afdcaa403df9",
+  "source": "WHO",
+  "query": "MDG_0000000020",
+  "rows": 1339,
+  "columns": [
+    "iso3",
+    "year",
+    "tb_inc"
+  ],
+  "saved_at": "2026-04-03T20:38:55.710567+00:00"
+}

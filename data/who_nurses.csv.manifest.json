@@ -1,0 +1,12 @@
+{
+  "checksum": "6784c37bd9096ae95afadc7a84923df6c8aeed516727f96e1c5a8829127489df",
+  "source": "WHO",
+  "query": "HWF_0002",
+  "rows": 673,
+  "columns": [
+    "iso3",
+    "year",
+    "nurses"
+  ],
+  "saved_at": "2026-04-03T20:38:37.363120+00:00"
+}

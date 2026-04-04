@@ -1,0 +1,12 @@
+{
+  "checksum": "bd0abc89590343e678ce0a9e56c62e73dfbe5b0270be03bd412df67c3a40e9d9",
+  "source": "WHO",
+  "query": "WHOSIS_000002",
+  "rows": 3564,
+  "columns": [
+    "iso3",
+    "year",
+    "hale"
+  ],
+  "saved_at": "2026-04-03T20:38:34.284965+00:00"
+}

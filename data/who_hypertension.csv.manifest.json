@@ -1,0 +1,12 @@
+{
+  "checksum": "c791986d9c721c234c5d10df5df8de2537c63e94c59684a6276e50a5a6459aa0",
+  "source": "WHO",
+  "query": "NCD_HYP_PREVALENCE_A",
+  "rows": 4860,
+  "columns": [
+    "iso3",
+    "year",
+    "hypertension"
+  ],
+  "saved_at": "2026-04-03T20:38:46.851207+00:00"
+}

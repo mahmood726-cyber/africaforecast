@@ -1,0 +1,12 @@
+{
+  "checksum": "ff9995a346276b1aec27a1b872ab2c52f04dd83e67ade22ad49f0796b5daddf7",
+  "source": "WHO",
+  "query": "NCD_GLUC_04",
+  "rows": 5670,
+  "columns": [
+    "iso3",
+    "year",
+    "diabetes"
+  ],
+  "saved_at": "2026-04-03T20:38:42.900713+00:00"
+}

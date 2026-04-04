@@ -1,0 +1,12 @@
+{
+  "checksum": "c35bb5a1cc90fee5b5f3782fa3b74e991c3952b6e8dd356cf7815fe4e40a8575",
+  "source": "WHO",
+  "query": "UHC_INDEX_REPORTED",
+  "rows": 1296,
+  "columns": [
+    "iso3",
+    "year",
+    "uhc_index"
+  ],
+  "saved_at": "2026-04-03T20:38:38.622888+00:00"
+}

@@ -1,0 +1,12 @@
+{
+  "checksum": "810b5f374e5cb7f54dfebee1c8811e50d4c35c9f0531e65935de7d99aa310bcc",
+  "source": "WHO",
+  "query": "HWF_0001",
+  "rows": 672,
+  "columns": [
+    "iso3",
+    "year",
+    "physicians"
+  ],
+  "saved_at": "2026-04-03T20:38:35.650414+00:00"
+}

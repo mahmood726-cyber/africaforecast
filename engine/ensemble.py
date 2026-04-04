@@ -204,7 +204,10 @@ def fit_gaussian_process(
 
     kernel = ConstantKernel(1.0) * RBF(length_scale=1.0) + WhiteKernel(noise_level=0.1)
 
-    for ind in indicators:
+    # Cap GP to 8 indicators max (GP kernel optimization is slow per fit)
+    gp_indicators = indicators[:8] if len(indicators) > 8 else indicators
+
+    for ind in gp_indicators:
         if ind not in panel.columns:
             continue
 

@@ -1,0 +1,12 @@
+{
+  "checksum": "8305a92436ef24f73b3fa87b4b7d46b2c0c4fcba1f07cf153c557a9424b69fcc",
+  "source": "WHO",
+  "query": "NCDMORT3070",
+  "rows": 3564,
+  "columns": [
+    "iso3",
+    "year",
+    "ncd_mort"
+  ],
+  "saved_at": "2026-04-03T20:38:32.398236+00:00"
+}

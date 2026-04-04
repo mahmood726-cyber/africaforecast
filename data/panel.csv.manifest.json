@@ -1,0 +1,24 @@
+{
+  "checksum": "221bfb033c4c6a3a716f3408a02301ab5f6f3a679f54a1eabf17322f33d1d868",
+  "source": "merged",
+  "query": "ingest_all",
+  "rows": 333830,
+  "columns": [
+    "iso3",
+    "year",
+    "ncd_mort",
+    "hale",
+    "physicians",
+    "nurses",
+    "uhc_index",
+    "dtp3",
+    "diabetes",
+    "hypertension",
+    "tobacco",
+    "obesity",
+    "gghe",
+    "mal_inc",
+    "tb_inc"
+  ],
+  "saved_at": "2026-04-03T20:38:59.385945+00:00"
+}

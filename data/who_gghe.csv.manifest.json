@@ -1,0 +1,12 @@
+{
+  "checksum": "95c479b78584baf5200eae2cfc1e74b9892d740d59bdbe2531bbbfd2412bfdec",
+  "source": "WHO",
+  "query": "GHED_GGHE-DGDP_SHA2011",
+  "rows": 1256,
+  "columns": [
+    "iso3",
+    "year",
+    "gghe"
+  ],
+  "saved_at": "2026-04-03T20:38:52.313831+00:00"
+}

@@ -1,0 +1,12 @@
+{
+  "checksum": "0ee95715753b7c882319ccdc2c14c2b421992db3d66a7d7a395644994df6e392",
+  "source": "WHO",
+  "query": "WHS4_100",
+  "rows": 1339,
+  "columns": [
+    "iso3",
+    "year",
+    "dtp3"
+  ],
+  "saved_at": "2026-04-03T20:38:40.228543+00:00"
+}

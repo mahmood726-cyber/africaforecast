@@ -1,0 +1,12 @@
+{
+  "checksum": "e783acc81c4843016aaf28c3fa15f1555be5807b42712412035e9412272df4f7",
+  "source": "WHO",
+  "query": "M_Est_smk_curr_std",
+  "rows": 1452,
+  "columns": [
+    "iso3",
+    "year",
+    "tobacco"
+  ],
+  "saved_at": "2026-04-03T20:38:48.632886+00:00"
+}
