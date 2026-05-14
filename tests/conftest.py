@@ -1,5 +1,7 @@
 """Shared test fixtures for AfricaForecast test suite."""
 
+import os
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -9,6 +11,15 @@ from engine.config import (
     COMPREHENSIVE_INDICATORS, DISEASE_INDICATORS,
     SYSTEMS_INDICATORS, COVARIATES, SEED,
 )
+
+if os.environ.get("RUN_SLOW_TESTS", "").lower() not in {"1", "true", "yes"}:
+    collect_ignore_glob = [
+        "test_bhvar.py",
+        "test_ensemble.py",
+        "test_integration.py",
+    ]
+else:
+    collect_ignore_glob = []
 
 
 @pytest.fixture
